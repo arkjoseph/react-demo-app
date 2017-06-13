@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "email": "hello@gmail.com",
+    "author": "Clu",
+    "body": "Just say no to love!!",
+    "avatarUrl": "https://placeimg.com/200/240/any"
+  },{
+  "id": 2,
+  "email": "hello@gmail.com",
+  "author": "Anne Droid",
+  "body": "I wanna know what love is...",
+  "avatarUrl": "https://placeimg.com/200/240/any"
+},{
+  "id": 3,
+  "email": "hello@gmail.com",
+  "author": "Bill Droid",
+  "body": "Whats happening",
+  "avatarUrl": "https://placeimg.com/200/240/any"
+}
+]
+
+
+

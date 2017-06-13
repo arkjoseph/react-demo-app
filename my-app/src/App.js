@@ -1,90 +1,139 @@
 import React, { Component } from 'react';
 //import logo from './logo.svg';
 import './App.css';
-
+//import { findDOMNode } from 'react-dom';
+import $ from 'jquery';
 
 /*
- * Build CommentBox Component
+ * Build RecordBox Component
  */
-class CommentBox extends Component {
+class RecordBox extends Component {
+
+  constructor() {
+    super();
+
+    this.state = {
+      showComments: false,
+      records: []
+    };
+  }
+  componentWillMount(){
+    this._fetchRecords();
+  }
   render(){
-    const comments = this._getComments() || [];
+    const records = this._getComments();
     return (
       <div className="comment-box">
-        <CommentForm addComment={this._addComment.bind(this)} />
-        <hr />
-        <h3>Comments</h3>
-        {this._getPopularMessage(comments.length)}
-        <h4 className="comment-count">{this._getCommentsTitle(comments.length)}</h4>
+        <RecordForm addComment={this._addComment.bind(this)} />
+        {this._getPopularMessage(records.length)}
+        <h4 className="comment-count">{this._getRecordsTitle(records.length)}</h4>
         <p><b>{this._getPopularMessage()}</b></p>
         <div className="comment-list">
-          {comments}
+          {records}
         </div>
       </div>
     );
   }
 
+  // start polling process
+  componentDidMount(){
+    this._timer = setInterval(() => this._fetchRecords(), 5000);
+  }
+  /////
 
-  // My methods
-  _fetchComments() {
-    
+  componentWillUnmount() {
+    clearInterval(this._timer);
   }
 
-  _addComment(author,body) {
-    const comment = {
-      id: this.state.comments.length + 1,
-      author,
-      body
-    };
-    this.setState({ comments: this.state.comments.concat([comment])});
-  }
 
-  constructor() {
-    super();
-    this.state = {
-      showComments: false,
-      comments: [  ]
-    }
-  }
-
-  _getComments() {
-  //  const commentList = [
-  //    { id: 1, author: 'Clu', body: 'Just say no to love!!', avatarUrl: 'https://placeimg.com/200/240/any' },
-  //    { id: 2, author: 'Anne Droid', body: 'I wanna know what love is...', avatarUrl: 'https://placeimg.com/200/240/any' },
-  //    { id: 3, author: 'Bill Droid', body: 'Whats happening', avatarUrl: 'https://placeimg.com/200/240/any' }
-  //
-  //  ];
-
-    return this.state.comments.map((comment) => {
-      return (
-        <Comment author={comment.author} body={comment.body} avatarUrl={comment.avatarUrl} key={comment.id} />
-      )
-    });
-  }
-
-  _getPopularMessage(commentCount){
+  _getPopularMessage(recordCount){
     const POPULAR_COUNT = 10;
 
-    if (commentCount > POPULAR_COUNT) {
+    if (recordCount > POPULAR_COUNT) {
       return (
         <b>Post is popular!</b>
       );
-    } else if (commentCount < POPULAR_COUNT) {
+    } else if (recordCount < POPULAR_COUNT) {
       return (
         <b>Post is average</b>
       );
     }
   }
 
-  _getCommentsTitle(commentCount) {
-    if (commentCount === 0) {
-      return 'No comments yet.';
-    } else if (commentCount === 1) {
-      return '1 comment';
+  _getRecordsTitle(recordCount) {
+    if (recordCount === 0) {
+      return 'No Results.';
+    } else if (recordCount === 1) {
+      return '1 Result';
     } else {
-      return `${commentCount} comments`;
+      return `${recordCount} Results`;
     }
   }
+
+  _addComment(author,body) {
+    // Create object
+    const comment = {author,body};
+
+    //$.post('http://apidata:8888/data.json', {comment})
+    //  .success(newComment => {
+    //    this.setState({ records: this.state.records.concat([newComment]) });
+    //});
+    $.ajax({
+      method: 'POST',
+      url: 'http://apidata:8888/data.json',
+      success: () => {
+        this.setState({ records: this.state.records.concat([comment])  });
+      },
+      error: () => {
+        console.log('error');
+      }
+    });
+
+    //let comment = {
+    //  id: Math.floor(Math.random() * (9999 - this.state.records.length + 1)) + this.state.records.length,
+    //  author: author,
+    //  body: body,
+    //  avatarUrl: 'http://lorempixel.com/400/200/'
+    //};
+    //
+    //this.setState({
+    //  records: this.state.records.concat([comment])
+    //});
+  }
+
+  // API Call
+  _fetchRecords() {
+    $.ajax({
+      method: 'GET',
+      url: 'http://apidata:8888/data.json',
+      success: (records) => {
+        this.setState({ records });
+      },
+      error: () => {
+        console.log('error');
+      }
+    });
+  }
+  _deleteComment(comment){
+    $.ajax({
+      method: 'DELETE',
+      url: `http://apidata:8888/data.json/${comment.id}`
+    })
+  }
+
+  _getComments() {
+    return this.state.records.map((comment) => {
+      return <Comment
+        id={comment.id}
+        author={comment.author}
+        email={comment.email}
+        body={comment["Contractor Name"]}
+        key={comment.id}
+        onDelete={this._deleteComment.bind(this)}/>
+    });
+  }
+
+
 }
 
 /*
@@ -111,17 +160,32 @@ class Comment extends Component {
 
     return (
       <div className="comment">
-        <img alt={`${this.props.author}'s picture`} src={this.props.avatarUrl}/>
-        <p className="comment-header">{this.props.author}</p>
+        <p className="comment-header">Title: {this.props.author}</p>
         <p className="comment-body">
-          {commentBody}
+          Body: {commentBody}
+        </p>
+        <p>
+          Email: {this.props.email}
         </p>
         <div className="comment-actions">
-          <a href="#">Delete comment</a><br />
+          <a href="#">
+            Show More
+          </a>
+          <br />
           <a onClick={this._toggleAbuse.bind(this)} href="#">Report Abuse</a>
         </div>
       </div>
     );
+  }
+
+  _handleDelete(event){
+    event.preventDefault();
+    this.props.onDelete(this.props.comment);
+    //var result = ("Are you sure?");
+    //if (result) {
+    //  this.props.onDelete(this.props.comment);
+    //}
+
   }
 
   _toggleAbuse(event){
@@ -133,17 +197,32 @@ class Comment extends Component {
 
 }
 
-class CommentForm extends Component {
+class RemoveCommentConfirmation extends Component {
+  constructor() {
+    super();
+
+    this.state = {
+      showConfirm: false
+      }
+  }
+
+}
+
+
+class RecordForm extends Component {
   render(){
     return (
       <form className="comment-form" onSubmit={this._handleSubmit.bind(this)}>
         <label>Discussion</label>
         <div className="comment-form-fields">
-          <input ref={(input) => this._author = input} type="text" placeholder="Name:" />
+          <input
+            ref={(input) => this._author = input}
+            type="text"
+            placeholder="Name:" />
           <textarea
             ref={(textarea) => this._body = textarea}
             type="text"
-            onkeyup={this._getCharacterCount.bind(this)}
+            onKeyUp={this._getCharacterCount.bind(this)}
             placeholder="Comment:"></textarea>
         </div>
         <div className="comment-form-actions">
@@ -177,4 +256,23 @@ class CommentForm extends Component {
   }
 }
 
-export default CommentBox;
+class CommentAvatarList extends Component{
+  render(){
+    const { avatars = []} = this.props;
+    return(
+      <div className="comment-avatars">
+        <h4>Authors</h4>
+        <ul>
+          {avatars.map((avatarUrl, i) =>(
+            <li key={i}>
+              <img height="100px" src={avatarUrl} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+
+  }
+}
+
+export default RecordBox;
