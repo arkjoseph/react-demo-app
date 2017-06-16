@@ -271,17 +271,39 @@ class RecordForm extends Component {
       <form className="record-form" onSubmit={this._handleSubmit.bind(this)}>
         <label>Company Name</label>
         <div className="company-filter">
-          <select
+          <select onChange={}
             //ref=
             type="select">
-            <option value="">- Company Name -</option>
+            <option value="">- Select Company Name -</option>
           </select>
-        <label>NAICS Code</label>
-          <select
+        </div>
+        <div className="naics-filter">
+          <label>NAICS Code</label>
+            <select onChange={}
+              //ref=
+              value={}
+              type="select">
+              <option value="">- Select NAICS Code -</option>
+            </select>
+        </div>
+        <div className="hq-state-filter">
+          <label>Company headquarters state</label>
+          <select onChange={}
             //ref=
+            value={}
             type="select">
-            <option value="">- Select -</option>
+            <option value="">- Select State-</option>
           </select>
+        </div>
+        <div className="work-state">
+          <label>Workplace State</label>
+          <select onChange={}
+            //ref=
+            value={}
+            type="select">
+            <option value="">- Select State-</option>
+          </select>
+        </div>
         <div className="comment-form-actions">
           <button type="submit">
             Post comment
