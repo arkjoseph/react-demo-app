@@ -13,17 +13,17 @@ class RecordBox extends Component {
     super();
 
     this.state = {
-      showComments: false,
-      records: []
+      showResults: false,
+      results: []
     };
   }
   componentWillMount(){
     this._fetchRecords();
   }
   render(){
-    const records = this._getComments();
+    const records = this._getRecords();
     return (
-      <div className="comment-box">
+      <div className="form-wrapper">
         <RecordForm addComment={this._addComment.bind(this)} />
         {this._getPopularMessage(records.length)}
         <h4 className="comment-count">{this._getRecordsTitle(records.length)}</h4>
@@ -74,10 +74,6 @@ class RecordBox extends Component {
     // Create object
     const comment = {author,body};
 
-    //$.post('http://apidata:8888/data.json', {comment})
-    //  .success(newComment => {
-    //    this.setState({ records: this.state.records.concat([newComment]) });
-    //});
     $.ajax({
       method: 'POST',
       url: 'http://apidata:8888/data.json',
@@ -88,59 +84,61 @@ class RecordBox extends Component {
         console.log('error');
       }
     });
+  }
 
-    //let comment = {
-    //  id: Math.floor(Math.random() * (9999 - this.state.records.length + 1)) + this.state.records.length,
-    //  author: author,
-    //  body: body,
-    //  avatarUrl: 'http://lorempixel.com/400/200/'
-    //};
-    //
-    //this.setState({
-    //  records: this.state.records.concat([comment])
-    //});
+  _deleteComment(record){
+    $.ajax({
+      method: 'DELETE',
+      url: `http://apidata:8888/data.json/${record.id}`
+    })
   }
 
   // API Call
   _fetchRecords() {
     $.ajax({
       method: 'GET',
-      url: 'http://apidata:8888/data.json',
-      success: (records) => {
-        this.setState({ records });
+      url: 'https://inventory.data.gov/api/action/datastore_search?resource_id=6bee15c5-d9cb-412d-9523-ad8cf1e2801a&limit=25',
+      success: (results) => {
+        this.setState({ results: results.result.records });
       },
       error: () => {
         console.log('error');
       }
     });
   }
-  _deleteComment(comment){
-    $.ajax({
-      method: 'DELETE',
-      url: `http://apidata:8888/data.json/${comment.id}`
-    })
-  }
 
-  _getComments() {
-    return this.state.records.map((comment) => {
+  _getRecords() {
+    return this.state.results.map((item) => {
       return <Comment
-        id={comment.id}
-        author={comment.author}
-        email={comment.email}
-        body={comment["Contractor Name"]}
-        key={comment.id}
-        onDelete={this._deleteComment.bind(this)}/>
+        state={item["state"]}
+        phone={item["Vendor Phone Number"]}
+        performance_city={item["Principal Place of Performance City Name"]}
+        piid={item["PIID"]}
+        performance_zip={item["Place of Performance Zip Code"]}
+        zip={item["Zip"]}
+        product_code={item["Product or Service Code"]}
+        product_description={item["Product or Service Description"]}
+        performance_state={item["Principal Place of Performance State Code"]}
+        completion_date={item["Est. Ultimate Completion Date"]}
+        action_obligation={item["Action Obligation"]}
+        street={item["Street"]}
+        duns_number={item["DUNS Number"]}
+        contractor_name={item["Contractor Name"]}
+        date_signed={item["Date Signed"]}
+        vendor_city={item["Vendor City"]}
+        naics_description={item["NAICS Description"]}
+        effective_date={item["Effective Date"]}
+        naics_code={item["NAICS Code"]}
+        key={item["_id"]}
+      />
     });
   }
-
-
 }
 
 /*
  * Build Comment Component
  */
 class Comment extends Component {
-
   constructor(){
     super();
     this.state= {
@@ -150,32 +148,90 @@ class Comment extends Component {
 
 
   render() {
-    let commentBody;
+    let vendor_city = this.props.vendor_city,
+        street = this.props.street,
+        contractor_name = this.props.contractor_name,
+        phone = this.props.phone,
+        naics_code = this.props.naics_code,
+        performance_city = this.props.performance_city,
+        performance_state = this.props.performance_state,
+        f_performance_zip = this._zipCodeFormating(this.props.performance_zip),
+        f_zip = this._zipCodeFormating(this.props.zip),
+        description = this.props.product_description,
+        f_effective_date = this._dateFormating(this.props.effective_date),
+        piid = this.props.piid,
+        f_completion_date = this._dateFormating(this.props.completion_date),
+        naics_description = this.props.naics_description,
+        product_code = this.props.product_code,
+        date_signed = this._dateFormating(this.props.date_signed);
 
-    if(!this.state.isAbusive) {
-      commentBody = this.props.body;
-    } else {
-      commentBody = <em>Content marked as abusive</em>;
-    }
+
+    //if(!this.state.isAbusive) {
+    //  commentBody = this.props.body;
+    //} else {
+    //  commentBody = <em>Content marked as abusive</em>;
+    //}
 
     return (
       <div className="comment">
-        <p className="comment-header">Title: {this.props.author}</p>
-        <p className="comment-body">
-          Body: {commentBody}
-        </p>
-        <p>
-          Email: {this.props.email}
-        </p>
-        <div className="comment-actions">
-          <a href="#">
-            Show More
-          </a>
-          <br />
-          <a onClick={this._toggleAbuse.bind(this)} href="#">Report Abuse</a>
+        <h4 className="comment-body">
+         {contractor_name}
+        </h4>
+        <div className="vcard">
+          <p className="street-address">
+            {street}
+          </p>
+          <p className="vendor_city">
+            {vendor_city}, {f_zip}
+          </p>
+          <p className="tel">
+            {phone}
+          </p>
         </div>
+        <div className="naics-code">
+          NAICS Code: {naics_code}
+        </div>
+        <div className="performance-region">
+          Performance Region: [missing]
+        </div>
+        <div className="performance-place">
+          Performance Place: {performance_city}, {performance_state} {f_performance_zip}
+        </div>
+        <hr />
+        <div className="description">
+          P/S Description: {description}
+        </div>
+        <div className="piid">
+          PIID: {piid}
+        </div>
+        <div className="date">
+          Effective Date: {f_effective_date}
+        </div>
+        <div className="date">
+          Completion Date: {f_completion_date}
+        </div>
+        <div className="naics-description">
+          NAICS Description: {naics_description}
+        </div>
+        <div className="product-code">
+          Product Code: {product_code}
+        </div>
+        <div className="date-signed">
+          Product Code: {date_signed}
+        </div>
+        <hr />
       </div>
     );
+  }
+
+  _dateFormating(item) {
+    let f_date = item.split('T')[0];
+    return f_date;
+  }
+
+  _zipCodeFormating(item){
+    let f_zip = item.substr(0, 5)+"-"+item.substr(5);
+    return f_zip;
   }
 
   _handleDelete(event){
@@ -212,19 +268,20 @@ class RemoveCommentConfirmation extends Component {
 class RecordForm extends Component {
   render(){
     return (
-      <form className="comment-form" onSubmit={this._handleSubmit.bind(this)}>
-        <label>Discussion</label>
-        <div className="comment-form-fields">
-          <input
-            ref={(input) => this._author = input}
-            type="text"
-            placeholder="Name:" />
-          <textarea
-            ref={(textarea) => this._body = textarea}
-            type="text"
-            onKeyUp={this._getCharacterCount.bind(this)}
-            placeholder="Comment:"></textarea>
-        </div>
+      <form className="record-form" onSubmit={this._handleSubmit.bind(this)}>
+        <label>Company Name</label>
+        <div className="company-filter">
+          <select
+            //ref=
+            type="select">
+            <option value="">- Company Name -</option>
+          </select>
+        <label>NAICS Code</label>
+          <select
+            //ref=
+            type="select">
+            <option value="">- Select -</option>
+          </select>
         <div className="comment-form-actions">
           <button type="submit">
             Post comment
