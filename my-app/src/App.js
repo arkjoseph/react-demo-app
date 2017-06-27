@@ -3,226 +3,154 @@ import React, { Component } from 'react';
 import './App.css';
 //import { findDOMNode } from 'react-dom';
 import $ from 'jquery';
+//import { connect } from 'react-redux';
+//import { field, reduxForm } from 'redux-form';
 
 /*
- * Build RecordBox Component
+ * Build Wrapper Component
  */
-class RecordBox extends Component {
 
+class AppWrapper extends Component {
   constructor() {
     super();
-
     this.state = {
       showResults: false,
       results: []
-    };
+    }
   }
-  componentWillMount(){
-    this._fetchRecords();
-  }
+
   render(){
-    const records = this._getRecords();
     return (
-      <div className="form-wrapper">
-        <RecordForm addComment={this._addComment.bind(this)} />
-        {this._getPopularMessage(records.length)}
-        <h4 className="comment-count">{this._getRecordsTitle(records.length)}</h4>
-        <p><b>{this._getPopularMessage()}</b></p>
-        <div className="comment-list">
-          {records}
-        </div>
+      <div className="app-wrapper">
+        <AppContainer />
       </div>
-    );
-  }
+    )
+  };
+}
 
-  // start polling process
+class AppContainer extends Component {
+  constructor() {
+    super();
+    this.state = { results: [] }
+  }
+// REACT Life Cycles
+  componentWillMount(){
+    this._fetchData();
+  }
   componentDidMount(){
-    this._timer = setInterval(() => this._fetchRecords(), 5000);
+    this._timer = setInterval(() => this._fetchData(), 5000);
   }
-  /////
-
   componentWillUnmount() {
     clearInterval(this._timer);
   }
-
-
-  _getPopularMessage(recordCount){
-    const POPULAR_COUNT = 10;
-
-    if (recordCount > POPULAR_COUNT) {
-      return (
-        <b>Post is popular!</b>
-      );
-    } else if (recordCount < POPULAR_COUNT) {
-      return (
-        <b>Post is average</b>
-      );
-    }
-  }
-
-  _getRecordsTitle(recordCount) {
-    if (recordCount === 0) {
-      return 'No Results.';
-    } else if (recordCount === 1) {
-      return '1 Result';
-    } else {
-      return `${recordCount} Results`;
-    }
-  }
-
-  _addComment(author,body) {
-    // Create object
-    const comment = {author,body};
-
-    $.ajax({
-      method: 'POST',
-      url: 'http://apidata:8888/data.json',
-      success: () => {
-        this.setState({ records: this.state.records.concat([comment])  });
-      },
-      error: () => {
-        console.log('error');
-      }
-    });
-  }
-
-  _deleteComment(record){
-    $.ajax({
-      method: 'DELETE',
-      url: `http://apidata:8888/data.json/${record.id}`
-    })
-  }
+  render() {
+    const ResultRows = this._mapFields();
+    return (
+      <div>
+        <form className="react-form">
+          <SearchBar
+            names={this.state.results.map(item => item["Contractor Name"])}
+            naics_codes={this.state.results.map(item => item["NAICS Code"])}
+          />
+        </form>
+        <div className="filtered-results">
+          {ResultRows}
+        </div>
+      </div>      
+    )
+  };
 
   // API Call
-  _fetchRecords() {
+  _fetchData() {
     $.ajax({
+      cache: 'true',
       method: 'GET',
-      url: 'https://inventory.data.gov/api/action/datastore_search?resource_id=6bee15c5-d9cb-412d-9523-ad8cf1e2801a&limit=25',
+      url: 'http://apidata:8888/inventory.json',
+      //url: 'https://inventory.data.gov/api/action/datastore_search?resource_id=6bee15c5-d9cb-412d-9523-ad8cf1e2801a&limit=25',
       success: (results) => {
         this.setState({ results: results.result.records });
-      },
-      error: () => {
-        console.log('error');
+      }, error: () => {
+        console.log('$ ajax error');
+      }
+    });
+  }
+  _fetchStates() {
+    $.ajax({
+      cache: 'true',
+      method: 'GET',
+      url: 'http://apidata:8888/states.json',
+      success: (states) => {
+        this.setState({ states: states.region.state });
+      }, error: () => {
+        console.log('$ ajax error');
       }
     });
   }
 
-  _getRecords() {
+  _mapFields(){
     return this.state.results.map((item) => {
-      return <Comment
-        state={item["state"]}
-        phone={item["Vendor Phone Number"]}
-        performance_city={item["Principal Place of Performance City Name"]}
-        piid={item["PIID"]}
-        performance_zip={item["Place of Performance Zip Code"]}
-        zip={item["Zip"]}
-        product_code={item["Product or Service Code"]}
-        product_description={item["Product or Service Description"]}
-        performance_state={item["Principal Place of Performance State Code"]}
-        completion_date={item["Est. Ultimate Completion Date"]}
-        action_obligation={item["Action Obligation"]}
-        street={item["Street"]}
-        duns_number={item["DUNS Number"]}
-        contractor_name={item["Contractor Name"]}
-        date_signed={item["Date Signed"]}
-        vendor_city={item["Vendor City"]}
-        naics_description={item["NAICS Description"]}
-        effective_date={item["Effective Date"]}
-        naics_code={item["NAICS Code"]}
-        key={item["_id"]}
+      return <ResultRow
+        state               ={item["state"]}
+        phone               ={item["Vendor Phone Number"]}
+        performance_city    ={item["Principal Place of Performance City Name"]}
+        piid                ={item["PIID"]}
+        performance_zip     ={item["Place of Performance Zip Code"]}
+        zip                 ={item["Zip"]}
+        product_code        ={item["Product or Service Code"]}
+        product_description ={item["Product or Service Description"]}
+        performance_state   ={item["Principal Place of Performance State Code"]}
+        completion_date     ={item["Est. Ultimate Completion Date"]}
+        action_obligation   ={item["Action Obligation"]}
+        street              ={item["Street"]}
+        duns_number         ={item["DUNS Number"]}
+        contractor_name     ={item["Contractor Name"]}
+        date_signed         ={item["Date Signed"]}
+        vendor_city         ={item["Vendor City"]}
+        naics_description   ={item["NAICS Description"]}
+        effective_date      ={item["Effective Date"]}
+        naics_code          ={item["NAICS Code"]}
+        key                 ={item["_id"]}
       />
     });
   }
 }
 
-/*
- * Build Comment Component
- */
-class Comment extends Component {
-  constructor(){
-    super();
-    this.state= {
-      isAbusive: false
-    }
-  }
+class ResultRow extends Component {
+  render(){
+    //let filter            = this.props.filter,
+    //    filteredData      = this.props.filter((item) => {
+    //                          return (!filter || item.value == filter)
+    //
+    //                        });
 
+    let vendor_city       = this.props.vendor_city,
+      street              = this.props.street,
+      contractor_name     = this.props.contractor_name,
+      phone               = this.props.phone,
+      naics_code          = this.props.naics_code,
+      performance_city    = this.props.performance_city,
+      performance_state   = this.props.performance_state,
+      f_performance_zip   = this._zipCodeFormating(this.props.performance_zip),
+      f_zip               = this._zipCodeFormating(this.props.zip),
+      description         = this.props.product_description,
+      f_effective_date    = this._dateFormating(this.props.effective_date),
+      piid                = this.props.piid,
+      f_completion_date   = this._dateFormating(this.props.completion_date),
+      naics_description   = this.props.naics_description,
+      product_code        = this.props.product_code,
+      date_signed         = this._dateFormating(this.props.date_signed);
 
-  render() {
-    let vendor_city = this.props.vendor_city,
-        street = this.props.street,
-        contractor_name = this.props.contractor_name,
-        phone = this.props.phone,
-        naics_code = this.props.naics_code,
-        performance_city = this.props.performance_city,
-        performance_state = this.props.performance_state,
-        f_performance_zip = this._zipCodeFormating(this.props.performance_zip),
-        f_zip = this._zipCodeFormating(this.props.zip),
-        description = this.props.product_description,
-        f_effective_date = this._dateFormating(this.props.effective_date),
-        piid = this.props.piid,
-        f_completion_date = this._dateFormating(this.props.completion_date),
-        naics_description = this.props.naics_description,
-        product_code = this.props.product_code,
-        date_signed = this._dateFormating(this.props.date_signed);
-
-
-    //if(!this.state.isAbusive) {
-    //  commentBody = this.props.body;
-    //} else {
-    //  commentBody = <em>Content marked as abusive</em>;
-    //}
-
-    return (
-      <div className="comment">
-        <h4 className="comment-body">
-         {contractor_name}
-        </h4>
+    return(
+      <div className="well">
+        <div className="contractor-name"><b>{contractor_name}</b></div>
         <div className="vcard">
-          <p className="street-address">
-            {street}
-          </p>
-          <p className="vendor_city">
-            {vendor_city}, {f_zip}
-          </p>
-          <p className="tel">
-            {phone}
-          </p>
+          <p className="street-address">{street}</p>
+          <p className="vendor_city">{vendor_city}, {f_zip}</p>
+          <p className="tel">{phone}</p>
         </div>
-        <div className="naics-code">
-          NAICS Code: {naics_code}
-        </div>
-        <div className="performance-region">
-          Performance Region: [missing]
-        </div>
-        <div className="performance-place">
-          Performance Place: {performance_city}, {performance_state} {f_performance_zip}
-        </div>
-        <hr />
-        <div className="description">
-          P/S Description: {description}
-        </div>
-        <div className="piid">
-          PIID: {piid}
-        </div>
-        <div className="date">
-          Effective Date: {f_effective_date}
-        </div>
-        <div className="date">
-          Completion Date: {f_completion_date}
-        </div>
-        <div className="naics-description">
-          NAICS Description: {naics_description}
-        </div>
-        <div className="product-code">
-          Product Code: {product_code}
-        </div>
-        <div className="date-signed">
-          Product Code: {date_signed}
-        </div>
-        <hr />
       </div>
-    );
-  }
+    )
+  };
 
   _dateFormating(item) {
     let f_date = item.split('T')[0];
@@ -233,125 +161,56 @@ class Comment extends Component {
     let f_zip = item.substr(0, 5)+"-"+item.substr(5);
     return f_zip;
   }
-
-  _handleDelete(event){
-    event.preventDefault();
-    this.props.onDelete(this.props.comment);
-    //var result = ("Are you sure?");
-    //if (result) {
-    //  this.props.onDelete(this.props.comment);
-    //}
-
-  }
-
-  _toggleAbuse(event){
-    event.preventDefault();
-    this.state({
-      isAbusive: !this.state.isAbusive
-    });
-  }
-
 }
 
-class RemoveCommentConfirmation extends Component {
-  constructor() {
-    super();
-
-    this.state = {
-      showConfirm: false
-      }
+class SearchBar extends Component {
+  constructor(props){
+    super(props);
   }
-
-}
-
-
-class RecordForm extends Component {
   render(){
+
+    const { names       = [] } = this.props,
+          { naics_codes = [] } = this.props;
+
     return (
-      <form className="record-form" onSubmit={this._handleSubmit.bind(this)}>
-        <label>Company Name</label>
-        <div className="company-filter">
-          <select onChange={}
-            //ref=
-            type="select">
-            <option value="">- Select Company Name -</option>
-          </select>
-        </div>
-        <div className="naics-filter">
-          <label>NAICS Code</label>
-            <select onChange={}
-              //ref=
-              value={}
-              type="select">
-              <option value="">- Select NAICS Code -</option>
+      <div className="filters">
+        <div className="filters-by-name">
+          <label name="names">Filter by Name</label>
+            <select name="names" onChange={this._handleChange.bind(this)} >
+              <option value=""> - Make a Selection - </option>
+              {names.map((contractor_name, index) => (
+                <option value={contractor_name} key={index}>
+                  {contractor_name}
+                </option>
+              ))}
             </select>
-        </div>
-        <div className="hq-state-filter">
-          <label>Company headquarters state</label>
-          <select onChange={}
-            //ref=
-            value={}
-            type="select">
-            <option value="">- Select State-</option>
-          </select>
-        </div>
-        <div className="work-state">
-          <label>Workplace State</label>
-          <select onChange={}
-            //ref=
-            value={}
-            type="select">
-            <option value="">- Select State-</option>
-          </select>
-        </div>
-        <div className="comment-form-actions">
-          <button type="submit">
-            Post comment
-            </button>
           </div>
-      </form>
-    );
-  }
-
-  _getCharacterCount(){
-    this.setState({
-      characters: this._body.value.length
-    });
-  }
-
-  _handleSubmit(event){
-    event.preventDefault();
-
-    if (!this._author.value || !this._body.value) {
-      alert('Please enter your name and comment');
-      return;
-    }
-
-
-    let author = this._author;
-    let body = this._body;
-
-    this.props.addComment(author.value, body.value);
-  }
-}
-
-class CommentAvatarList extends Component{
-  render(){
-    const { avatars = []} = this.props;
-    return(
-      <div className="comment-avatars">
-        <h4>Authors</h4>
-        <ul>
-          {avatars.map((avatarUrl, i) =>(
-            <li key={i}>
-              <img height="100px" src={avatarUrl} />
-            </li>
-          ))}
-        </ul>
+        <div className="filter-by-naics-code">
+          <label name="names">Filter by NAICS Code</label>
+          <select name="names">
+            <option value=""> - Make a Selection - </option>
+            {naics_codes.map((naics_code, i) => (
+              <option value={naics_code} key={i}>
+                {naics_code}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-    )
 
+    )
+  };
+
+  _getInitialState(){
+    return {value: ""}
+  }
+  _handleChange(event){
+    this.setState({value: event.target.value});
+
+    console.log(event.target.value);
+
+    return;
   }
 }
 
-export default RecordBox;
+export default AppWrapper;
